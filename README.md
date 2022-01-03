@@ -3,23 +3,34 @@
 
 ### Crypto()
 
-Crypto calls a method called FullFunction. FullFunction is a method that executes the sub-methods inside of Crypto in the correct order.
+Crypto initialises with a url for the website to scrape, the HTML class name of the coins to scrape, and the configuration for the redis connection. Within the Crypto class there are several methods to handle the scraping and storage.
 
-First is SearchSoup() which calls the method GetCryptoInfo().
-GetCryptoInfo() handles the request and stores it in a BeautifulSoup object.
+### Coin()
+
+This class is the object of the coins scraped from the website. It contains the USD amount, the BTC amount, the date and time, and the hash of the coin.
+
+### GetCryptoInfo()
+
+This method handles the request using the url initialised and stores it in a variable called soup that uses the python package BeautifulSoup.
 
 ### SearchSoup()
-Then in SearchSoup() the divs containing the crypto information are searched for and stored to a list. 
-A while loop runs for 60 seconds where it will continuously refresh the request and collect the divs and extend the list with crypto information.
+This calls GetCryptoInfo() to get the scraping information then for 60 seconds it scrapes the site for coins and calls GetCryptoInfo() with each loop. Then it caches the response using the method CacheCoins(). When the 60 seconds are done it calls GetTopTen().
 
-### FormatString()
-Next the list is sent to FormatString() where it is temporarily converted to a dictionary to ensure only unique elements
-remain in the list. It's then turned back into a list and each string is formatted by adding spaces and removing unnecessary text. 'Amount' is replaced with a dash '-' character for a future method.
+### CacheCoins()
+In this method the results of the scrape are stored into redis, first the strings are formated then split so that USD is seperate from the rest of the string. Then its sent to Redis.
 
-### ArraytoDict()
-Once the strings in the list are formatted the list is sent to ArraytoDict() to be stored in a dictionary.
-Each element is split by the '-' character, and then swapped so the USD amount is the key and the string containing the hash, BitCoin amount, and time is the value.
-This dictionary is sorted and reversed and everything but the top 10 elements are purged.
+### GetTopTen()
+After all the coins are cached this method will collect them all from Redis and store them in a dictionary using the USD as the key. Then the dictionary is ordered by USD amount and the only the top 10 are selected. Then the dictionary is sent to CreateCoinWallet(). The Redis cache is cleared.
 
-### WritetoFile()
-Finally the dictionary is sent to WritetoFile(). In this method a check is done to see if a file exists already to determine whether a write ('w') or append ('a') method of opening the file is required. Then the dictionary is written to the file.
+### CreateCoinWallet()
+The dictionary is looped and a coin object is created for each top 10 coin. The hash, USD, BTC, and time are stored in the corresponding properties. Then these Coin objects properties are stored in another dictionary and sent to SendToMongo().
+
+### SendToMongo()
+The mongo client is established aswell as the collection to store and the results are sent to the collection.
+
+
+### Dockerfile
+Python 3.8 is pulled in and a mount to /code is created as the working directory. Then the python packages are installed.
+
+### Docker-compose
+A Redis image and Mongo image are created and linked with the main volume in /code.
