@@ -1,0 +1,25 @@
+version: '3.8'
+services:
+  write_static:
+    build:
+      context: ./
+      dockerfile: ./Dockerfile
+    ports:
+      - "8000:8000"
+    links:
+      - mongo
+      - redis
+    depends_on:
+      - mongo
+      - redis
+    volumes:
+      - .:/code
+  mongo:
+    image: mongo
+    ports:
+      - "27017:27017"
+    command: mongod --port 27017 --bind_ip 0.0.0.0
+  redis:
+    image: redis
+    ports:
+      - "6379:6379"
