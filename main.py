@@ -69,7 +69,10 @@ class Crypto:
         client = pymongo.MongoClient('mongo:27017')
         mydb = client["DatabasesAdvanced"]
         myCollection = mydb["Crypto"]
-        myCollection.insert_one(wallet)
+        key = list(wallet.keys())[0]
+        value = list(wallet.values())[0]
+        first_pair = {key : value}
+        myCollection.insert_one(first_pair)
 
 
 class Coin:
